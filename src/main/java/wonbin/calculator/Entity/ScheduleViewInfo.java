@@ -1,10 +1,12 @@
 package wonbin.calculator.Entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+@Data
 public class ScheduleViewInfo {
     private int userNumber; //사번
     private String position; // 근무 포지션

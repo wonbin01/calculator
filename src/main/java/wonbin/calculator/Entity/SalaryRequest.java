@@ -2,6 +2,7 @@ package wonbin.calculator.Entity;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
@@ -10,4 +11,5 @@ public class SalaryRequest {
     private int year;
     private int month;
     private List<ScheduleViewInfo> workLogs;
+    private List<holidayInfo> holidayList;
 }
