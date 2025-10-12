@@ -12,4 +12,5 @@ public class SalaryRequest {
     private int month;
     private List<ScheduleViewInfo> workLogs;
     private List<holidayInfo> holidayList;
+    private int prev_weekly_bonus;
 }

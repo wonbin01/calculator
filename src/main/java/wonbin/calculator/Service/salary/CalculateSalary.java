@@ -14,13 +14,14 @@ import java.util.stream.Collectors;
 
 @Service
 public class CalculateSalary {
-    private static final double TAX_RATE = 0.097; // 세금
+    private static final double TAX_RATE = 0.080; // 세금
     private static final int HOURLY_WAGE = 10030;
 
     public static SalaryInfo calculate(SalaryRequest request){
         int month= request.getMonth();
         List<ScheduleViewInfo> workLogs=request.getWorkLogs(); //usernumber, 몇일에 일했는지, 언제 출근해서 언제 퇴근했는지
         List<holidayInfo> holidayList = request.getHolidayList(); //date와 name 존재
+        int prevWeeklyBonus = request.getPrev_weekly_bonus();
 
         Set<LocalDate> holidays=holidayList.stream()
                 .map(holidayInfo::getDate)
@@ -29,8 +30,11 @@ public class CalculateSalary {
         double nightHours=0;
         double holidayHours=0;
         double weeklyHours=0;
-        double weeklyPay=0;
-
+        double weeklyPay=45000;
+        double nextMonthWeeklyPay=0;
+        if(workLogs.isEmpty()) {
+            return new SalaryInfo();
+        }
         //날짜순 정렬
         workLogs.sort(Comparator.comparing(ScheduleViewInfo::getApplyDate));
 
@@ -46,15 +50,6 @@ public class CalculateSalary {
             LocalTime startTime=log.getStartTime();
             LocalTime endTime=log.getEndTime();
 
-            if(date.isAfter(currentWeekEnd)){
-                if(weeklyHours>=15){
-                    weeklyPay+=(weeklyHours/40.0)*8*HOURLY_WAGE;
-                }
-                weeklyHours=0;
-                currentWeekStart=currentWeekStart.plusWeeks(1);
-                currentWeekEnd=currentWeekStart.plusDays(6);
-            }
-
             LocalDateTime startDateTime=LocalDateTime.of(date,startTime);
             LocalDateTime endDateTime;
 
@@ -64,8 +59,8 @@ public class CalculateSalary {
             } else {
                 endDateTime=LocalDateTime.of(date,endTime);
             }
-            Duration worked=Duration.between(startDateTime,endDateTime).minusMinutes(30);
-            double hoursWorked=worked.toMinutes()/60.0; //여기까지는 기본 일한 시간 계산
+            Duration worked=Duration.between(startDateTime,endDateTime);
+            double hoursWorked=worked.toMinutes()/60.0-0.5; //여기까지는 기본 일한 시간 계산
 
             weeklyHours+=hoursWorked;
 
@@ -85,10 +80,32 @@ public class CalculateSalary {
                 Duration nightWorked=Duration.between(actualNightStart,actualNightEnd);
                 nightHours+=nightWorked.toMinutes()/60.0;
             }
+            if(date.isAfter(currentWeekEnd)){
+                if(weeklyHours>=15){
+                    LocalDate lastWeekWednesday=currentWeekStart.plusDays(5);
+                    if(lastWeekWednesday.getMonthValue()==month){
+                        weeklyPay+=(weeklyHours/40.0) * 8 * HOURLY_WAGE;
+                    } else {
+                        nextMonthWeeklyPay+=(weeklyHours/40.0) * 8 * HOURLY_WAGE;
+                    }
+                }
+                weeklyHours=0;
+                currentWeekStart=currentWeekStart.plusWeeks(1);
+                currentWeekEnd=currentWeekStart.plusDays(6);
+            }
         }
-        if(weeklyHours >=15 && currentWeekEnd.getMonthValue()==month){
-            weeklyPay+=(weeklyHours/40.0) * 8 * HOURLY_WAGE;
+
+        // for문 끝난 뒤 마지막 주 주휴수당 계산
+        if(weeklyHours >= 15){
+            LocalDate lastWeekWednesday = currentWeekStart.plusDays(5);
+            if(lastWeekWednesday.getMonthValue() == month){
+                weeklyPay += (weeklyHours / 40.0) * 8 * HOURLY_WAGE;
+            } else {
+                nextMonthWeeklyPay += (weeklyHours / 40.0) * 8 * HOURLY_WAGE;
+            }
         }
+
+
         double basicPay=normalHours * HOURLY_WAGE;
         double nightPay=nightHours*HOURLY_WAGE*0.5;
         double holidayPay=holidayHours*HOURLY_WAGE;
@@ -103,6 +120,7 @@ public class CalculateSalary {
         info.setHoliday_bonus((int)holidayPay);
         info.setBefore_tax((int)totalPay);
         info.setAfter_tax((int)netpay);
+        info.setNext_month_weekly_bonus((int) nextMonthWeeklyPay);
         return info;
     }
 }
