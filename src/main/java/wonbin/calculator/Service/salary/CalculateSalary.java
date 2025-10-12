@@ -108,7 +108,7 @@ public class CalculateSalary {
 
         double basicPay=normalHours * HOURLY_WAGE;
         double nightPay=nightHours*HOURLY_WAGE*0.5;
-        double holidayPay=holidayHours*HOURLY_WAGE;
+        double holidayPay=holidayHours*HOURLY_WAGE * 0.5;
         double totalPay=basicPay +nightPay+holidayPay +weeklyPay;
         double tax=totalPay*TAX_RATE;
         double netpay=totalPay-tax;
