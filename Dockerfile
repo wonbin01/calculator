@@ -1,3 +1,3 @@
-FROM openjdk:17-jdk-slim
+FROM amazoncorretto:17
 COPY build/libs/calculator-0.0.1-SNAPSHOT.jar calculator.jar
 ENTRYPOINT ["java", "-jar", "/calculator.jar"]
